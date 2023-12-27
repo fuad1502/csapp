@@ -154,7 +154,10 @@ int bitXor(int x, int y) {
  *   Max ops: 4
  *   Rating: 1
  */
-int tmin(void) { return 2; }
+int tmin(void) {
+  /* Use the fact that the minimum two's complement integer is 10...0 */
+  return 1 << 31;
+}
 // 2
 /*
  * isTmax - returns 1 if x is the maximum, two's complement number,
