@@ -249,7 +249,19 @@ int conditional(int x, int y, int z) {
  *   Max ops: 24
  *   Rating: 3
  */
-int isLessOrEqual(int x, int y) { return 2; }
+int isLessOrEqual(int x, int y) {
+  /* The condition x <= y implies y - x >= 0. However, the operation (y - x)
+   * might overflow if (x > 0 && y < 0) or (x < 0 && y > 0). In either case, we
+   * already know the result without needing to compute the substraction.
+   * Therefore the operation could be expressed as follows: (x < 0 && y > 0) ||
+   * (!(x > 0 ^ y > 0) && (y - x >= 0)) */
+  int a = y + ~x + 1;
+  int b = !(a >> 31);
+  int c = !(x >> 31);
+  int d = !(y >> 31);
+  int e = ((!c) & d) | ((!(c ^ d)) & b);
+  return e;
+}
 // 4
 /*
  * logicalNeg - implement the ! operator, using all of
