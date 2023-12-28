@@ -331,7 +331,25 @@ unsigned floatScale2(unsigned uf) {
  *   Max ops: 30
  *   Rating: 4
  */
-int floatFloat2Int(unsigned uf) { return 2; }
+int floatFloat2Int(unsigned uf) {
+  int sign = (uf >> 31) & 0x1;
+  int exp = (uf >> 23) & 0xFF;
+  int frac = uf & 0x7FFFFF;
+  int result = (1 << 30) + (frac << 7);
+  int bias = 0x7F;
+  int e = exp - bias;
+  if (e > 30) {
+    return 0x80000000u;
+  } else if (e < 0) {
+    return 0;
+  } else {
+    result = result >> (30 - e);
+    if (sign == 1) {
+      result = -result;
+    }
+    return result;
+  }
+}
 /*
  * floatPower2 - Return bit-level equivalent of the expression 2.0^x
  *   (2.0 raised to the power x) for any 32-bit integer x.
