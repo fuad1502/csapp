@@ -363,4 +363,22 @@ int floatFloat2Int(unsigned uf) {
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatPower2(int x) { return 2; }
+unsigned floatPower2(int x) {
+  int sign = 0;
+  int bias = 0x7F;
+  int frac = 0;
+  int exp = 0;
+  // Maximum limit of normalized representation
+  if (x > 0xFE - bias) {
+    exp = 0xFF;
+  }
+  // Minimum limit of normalized representation
+  else if (x >= 0x1 - bias) {
+    exp = x + bias;
+  }
+  // Minimum limit of denormalized representation
+  else if (x >= -bias - 23) {
+    frac = 0x400000u >> -(x + bias);
+  }
+  return (sign << 31) + (exp << 23) + frac;
+}
