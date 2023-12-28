@@ -229,7 +229,19 @@ int isAsciiDigit(int x) {
  *   Max ops: 16
  *   Rating: 3
  */
-int conditional(int x, int y, int z) { return 2; }
+int conditional(int x, int y, int z) {
+  /* The key is to convert x to either 0x00000000 or 0xffffffff. Once that is
+   * done, the ternary operation can be easily performed by: y & x + y & ~x.
+   * The complexity arises due to the input that should be transformed to
+   * 0xffffffff for all numbers other than 0. To solve this, we first need to
+   * transform all numbers other than 0 to a single number. We could do it with
+   * the logical operator to transform it either 0x0 or 0x1. To transform 0x1 to
+   * 0xffffffff, while still maintaining the resulting 0x00000000 for x = 0, we
+   * could utilize the arithmetic shift operation rule: (x << 31) >> 31. */
+  int a = !x;
+  int b = (a << 31) >> 31;
+  return (y & ~b) + (z & b);
+}
 /*
  * isLessOrEqual - if x <= y  then return 1, else return 0
  *   Example: isLessOrEqual(4,5) = 1.
