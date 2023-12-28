@@ -297,7 +297,28 @@ int howManyBits(int x) { return 0; }
  *   Max ops: 30
  *   Rating: 4
  */
-unsigned floatScale2(unsigned uf) { return 2; }
+unsigned floatScale2(unsigned uf) {
+  int sign = (uf >> 31) & 0x1;
+  int exp = (uf >> 23) & 0xFF;
+  int frac = uf & 0x7FFFFF;
+  int frac_msb = frac >> 22;
+  // Case NaN
+  if (exp == 0xFF) {
+    return uf;
+  }
+  // Case denormalized
+  else if (exp == 0x00) {
+    if (frac_msb == 1) {
+      exp += 1;
+    }
+    frac = (uf << 1) & 0x7FFFFF;
+  }
+  // Case normalized
+  else {
+    exp += 1;
+  }
+  return (sign << 31) + (exp << 23) + frac;
+}
 /*
  * floatFloat2Int - Return bit-level equivalent of expression (int) f
  *   for floating point argument f.
