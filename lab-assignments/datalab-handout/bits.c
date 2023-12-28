@@ -212,7 +212,16 @@ int negate(int x) { return ~x + 1; }
  *   Max ops: 15
  *   Rating: 3
  */
-int isAsciiDigit(int x) { return 2; }
+int isAsciiDigit(int x) {
+  /* The condition 0x30 <= x <= 0x39 is equivalent to x - 0x30 >= 0 && 0x39 - x
+   * >= 0. This two conditionals can easily be translated to only use the
+   * allowed operators. */
+  int a = x + ~0x30 + 1;
+  int b = 0x39 + ~x + 1;
+  int c = (a >> 31);
+  int d = (b >> 31);
+  return !c & !d;
+}
 /*
  * conditional - same as x ? y : z
  *   Example: conditional(2,4,5) = 4
