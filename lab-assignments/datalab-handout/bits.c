@@ -175,7 +175,16 @@ int isTmax(int x) { return 2; }
  *   Max ops: 12
  *   Rating: 2
  */
-int allOddBits(int x) { return 2; }
+int allOddBits(int x) {
+  /* We need to transform correct inputs to 0x00000000. First, ignore
+   * even-numbered bits by &= 0xAAAAAAAA. Then, ^= 0xAAAAAAAA to set all
+   * odd-numbered bits to 0 for correct inputs. Then, logically negate the
+   * result */
+  int a = 0xAA;
+  int b = a + (a << 8) + (a << 16) + (a << 24); // 0xAAAAAAAA
+  int c = (x & b) ^ b;
+  return !c;
+}
 /*
  * negate - return -x
  *   Example: negate(1) = -1.
