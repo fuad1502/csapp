@@ -166,7 +166,17 @@ int tmin(void) {
  *   Max ops: 10
  *   Rating: 1
  */
-int isTmax(int x) { return 2; }
+int isTmax(int x) {
+  /* We need to transform the correct input to 0x00000000. Since x = 0b01...1,
+   * we can transform it to 0 by ~((x << 1) + 1). We can replace (x << 1) with
+   * (x + x). However, there is one incorrect input instance that will be
+   * transformed to 0x00000000 as well, that is when x = 0b11...1. However, we
+   * can ensure that the input instance is not that particular value easily. */
+  int a = ~(x + x + 1);
+  int b = !a;
+  int c = !~x;
+  return b & !c;
+}
 /*
  * allOddBits - return 1 if all odd-numbered bits in word set to 1
  *   where bits are numbered from 0 (least significant) to 31 (most significant)
