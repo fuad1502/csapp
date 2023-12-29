@@ -37,3 +37,22 @@ return a;
 The function looks complicated, but it's actually pretty simple to get the right output. Phase 4 expects the *func4* to return 0. Therefore, what we want is to get to the line marked in the code snippet above. And if we go through the operations, we would get that *di* = 7 get us to the marked line.
 Next, the code expects the second number to be 0.
 Therfore, the answer is: "7 0"
+
+# Phase 5
+
+Here is the stack organization of *phase_5* function:
+
+| address     | data            |
+|------------ | --------------- |
+| %rsp + 0x20 | return address  |
+| %rsp + 0x18 | canary          |
+| %rsp + 0x10 | \_\_\_\_\_\_0\_ |
+| %rsp        |                 |
+
+The string input characters, truncated to its last 4 bits, is used to index the string at address 0x4024b0, which contains: "maduiersnfotvbyl". The indexed characters are put into %rsp + 0x10. The resulting string are compared with the string at address 0x40245e, which contains "flyers".
+
+In the string at address 0x4024b0, the indeces for "flyers" are: 0x9, 0xf, 0xe, 0x5, 0x6, 0x7.
+
+The ASCII characters that have the previous hex digit as it's last four bits are (among others): i, o, n, e, f, g
+
+Therefore, the answer is: "ionefg".
