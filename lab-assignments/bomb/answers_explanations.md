@@ -1,26 +1,28 @@
-# Phase 1
+# Solution to Bomb Phases
+
+## Phase 1
 
 Calls *strings_not_equal(in, s)* which compares string *in* and string *s*. Where *in* is the string input and *s* is the value stored in address 0x402400 ("Border relations with Canada have never been better.")
 
 Therefore, the answer is: "Border relations with Canada have never been better.".
 
-# Phase 2
+## Phase 2
 
 Calls *read_six_numbers*, which in turn calls *sscanf(buffer, format, ...)*, where *buffer* is the string input, and *format* is the formatting string stored in address 0x4025c3 ("%d %d %d %d %d %d"). The first number is first checked whether it's equal to 1 or not. Then, the following numbers are checked in a for loop, ensuring that each number is twice the previous number.
 
 Therefore, the answer is: "1 2 4 8 16 32".
 
-# Phase 3
+## Phase 3
 
 Read two numbers with *sscanf* as before. The first number is first checked to ensure that it's value is less than or equal to 7. The first number is used as an index to the jump table at address 0x402470. Each arm of the jump table (switch statement) sets %eax to a certain value. If the index is 0, the jump table jumps to the first arm, which sets %eax to 0xcf (207). Then, the second number parsed from *sscanf* is compared with the value stored in %eax. There are multiple answers to this phase, depending on the index chosen. In my case, I use index 0.
 Therefore, the answer is: "0 207".
 
-# Phase 4
+## Phase 4
 
 Read two numbers with *sscanf* as before. The first number is first checked to ensure that it's value is less than 8. Then *func4(di, si, dx)* is called with *di* equals to the first number, *si* equals to 0, and *dx* equals to 14.
 Here is a translation of the arithmetic operation performed in func4:
 
-```
+```C
 int a = dx - si;
 int c = a >> 31;
 a = a + c;
@@ -46,7 +48,7 @@ The function looks complicated, but it's actually pretty simple to get the right
 Next, the code expects the second number to be 0.
 Therfore, the answer is: "7 0"
 
-# Phase 5
+## Phase 5
 
 Here is the stack organization of *phase_5* function:
 
@@ -65,13 +67,13 @@ The ASCII characters that have the previous hex digit as it's last four bits are
 
 Therefore, the answer is: "ionefg".
 
-# Phase 6
+## Phase 6
 
 Below is the analysis of *func6*:
 
-## Part 1
+### Part 1
 
-```
+```Assembly
 0x4010f4 <phase_6>      push   %r14
 0x4010f6 <phase_6+2>    push   %r13
 0x4010f8 <phase_6+4>    push   %r12
@@ -98,9 +100,9 @@ Here is the stack organization after the above code:
 | %rsp + 0x08 |                 |
 | %rsp        |                 |
 
-## Part 2
+### Part 2
 
-```
+```Assembly
 0x401100 <phase_6+12>   mov    %rsp,%r13
 0x401103 <phase_6+15>   mov    %rsp,%rsi
 0x401106 <phase_6+18>   call   0x40145c <read_six_numbers>
@@ -133,8 +135,8 @@ Here is the register states:
 %r13 = %r14 = %rsp
 ```
 
-## Part 3
-```
+### Part 3
+```Assembly
 LOOP:
     0x401114 <phase_6+32>   mov    %r13,%rbp
     0x401117 <phase_6+35>   mov    0x0(%r13),%eax 
@@ -170,7 +172,7 @@ END:
 
 Here is the rough translation to C:
 
-```
+```C
 int *rsp = {x, x, x, x, x, x};
 int *r13 = rsp;
 int *r14 = rsp;
@@ -199,9 +201,9 @@ while(true) {
 
 This function basically ensures that the 6 numbers are all different and are all smaller than or equal to 6 and larger than 0. Therefore, the numbers that satisfies this is any permutation of 1,2,3,4,5,6.
 
-## Part 4
+### Part 4
 
-```
+```Assembly
 0x401153 <phase_6+95>   lea    0x18(%rsp),%rsi
 0x401158 <phase_6+100>  mov    %r14,%rax
 0x40115b <phase_6+103>  mov    $0x7,%ecx
@@ -219,7 +221,7 @@ END:
 
 Here is the rough translation to C:
 
-```
+```C
 int* rsi = rsp[6];
 int* ra = rsp;
 int rc = 7;
@@ -249,9 +251,9 @@ Here is the stack organization after running the above code:
 | %rsp + 0x08 | 7-x 7-x         |
 | %rsp        | 7-x 7-x         |
 
-## Part 5
+### Part 5
 
-```
+```Assembly
 0x40116f <phase_6+123>  mov    $0x0,%esi
 
 LOOP_1:
@@ -288,7 +290,7 @@ END_1:
 
 Here is the rough translation to C:
 
-```
+```C
 int rsi = 0;
 while (true) {
     for (int rc = rsp[0]; rc <= 1; rc = rsp[rsi]) {
@@ -354,9 +356,9 @@ From here on now, let's refer to *%rsp + 0x20* as the *A* array, and the memory 
 
 One last thing, we will refer to the memory location starting at address 0x6032d0 up to 0x603320 as the *memp* (*p*revious quad of *mem* arrays) array.
 
-## Part 6
+### Part 6
 
-```
+```Assembly
 0x4011ab <phase_6+183>  mov    0x20(%rsp),%rbx         
 0x4011b0 <phase_6+188>  lea    0x28(%rsp),%rax
 0x4011b5 <phase_6+193>  lea    0x50(%rsp),%rsi
@@ -376,7 +378,7 @@ END:
 
 The rough translation to C is as follows:
 
-```
+```C
 long rb = A[0];
 long *ra = &A[1];
 long *rsi = &A[6];
@@ -398,7 +400,7 @@ t[1] = 0;
 
 Wrote in a better way:
 
-```
+```C
 for (int i = 1; i < 6; i++) {
     ((long *) A[i-1])[1] = A[i]; // mem[A[i - 1]] = A[i]
 }
@@ -406,9 +408,9 @@ for (int i = 1; i < 6; i++) {
 
 So, in the case of input string = "1 2 3 4 5 6", the address 0x603320 + 0x8 should now contain the value 0x603310, up to the address 0x6032e0 + 0x8 which should now contain 0x6032d0. And lastly, at 0x6032d0 + 0x8 should now contain 0.
 
-## Part 7
+### Part 7
 
-```
+```Assembly
 LOOP:
     INIT:
         0x4011da <phase_6+230>  mov    $0x5,%ebp
@@ -430,7 +432,7 @@ END:
 
 The rough translation to C is as follows:
 
-```
+```C
 int i = 0;
 int rb = A[0];
 for (int bp = 5; bp > 0; bp--) {
@@ -468,7 +470,7 @@ Upon running the simulation, an input string that satisfies the check is: "4 3 2
 
 And at last, the function stack in unwound:
 
-```
+```Assembly
 0x4011f7 <phase_6+259>  add    $0x50,%rsp
 0x4011fb <phase_6+263>  pop    %rbx
 0x4011fc <phase_6+264>  pop    %rbp
