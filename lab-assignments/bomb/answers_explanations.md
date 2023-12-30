@@ -56,7 +56,7 @@ Here is the stack organization of *phase_5* function:
 |------------ | --------------- |
 | %rsp + 0x20 | return address  |
 | %rsp + 0x18 | canary          |
-| %rsp + 0x10 | \_\_\_\_\_\_0\_ |
+| %rsp + 0x10 | x,x,x,x,x,x,0,0 |
 | %rsp        |                 |
 
 The string input characters, truncated to its last 4 bits, is used to index the string at address 0x4024b0, which contains: "maduiersnfotvbyl". The indexed characters are put into %rsp + 0x10. The resulting string are compared with the string at address 0x40245e, which contains "flyers".
@@ -124,9 +124,9 @@ Here is the stack organization after running the above code:
 | %rsp + 0x28 |                 |
 | %rsp + 0x20 |                 |
 | %rsp + 0x18 |                 |
-| %rsp + 0x10 | x x             |
-| %rsp + 0x08 | x x             |
-| %rsp        | x x             |
+| %rsp + 0x10 | x, x            |
+| %rsp + 0x08 | x, x            |
+| %rsp        | x, x            |
 
 Here is the register states:
 
@@ -136,6 +136,7 @@ Here is the register states:
 ```
 
 ### Part 3
+
 ```Assembly
 LOOP:
     0x401114 <phase_6+32>   mov    %r13,%rbp
@@ -247,9 +248,9 @@ Here is the stack organization after running the above code:
 | %rsp + 0x28 |                 |
 | %rsp + 0x20 |                 |
 | %rsp + 0x18 |                 |
-| %rsp + 0x10 | 7-x 7-x         |
-| %rsp + 0x08 | 7-x 7-x         |
-| %rsp        | 7-x 7-x         |
+| %rsp + 0x10 | 7-x, 7-x        |
+| %rsp + 0x08 | 7-x, 7-x        |
+| %rsp        | 7-x, 7-x        |
 
 ### Part 5
 
@@ -346,9 +347,9 @@ With input string = "1 2 3 4 5 6", the resulting stack organization is as follow
 | %rsp + 0x28 | 0x603310        |
 | %rsp + 0x20 | 0x603320        |
 | %rsp + 0x18 |                 |
-| %rsp + 0x10 | 7-x 7-x         |
-| %rsp + 0x08 | 7-x 7-x         |
-| %rsp        | 7-x 7-x         |
+| %rsp + 0x10 | 7-x, 7-x        |
+| %rsp + 0x08 | 7-x, 7-x        |
+| %rsp        | 7-x, 7-x        |
 
 Note that the order is reversed, which is expected because of the operation in part 4.
 
