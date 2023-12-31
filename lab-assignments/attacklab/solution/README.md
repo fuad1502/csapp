@@ -86,7 +86,7 @@ Where *%rdi* point to *%rsp + 0x8*, *%rsp* contains the address to the instructi
 
 Our goal is to replace *%rsp + 0x38* with the address of the *touch1* function (0x4017c0).
 
-To do that, we can simply write 40 arbitrary characters, and then 4 bytes corresponding to the *touch1* address. See [exploit_ctarget_1.txt](explot_ctarget_1.txt) for the solution to this problem.
+To do that, we can simply write 40 arbitrary characters, and then 4 bytes corresponding to the *touch1* address. See [exploit_ctarget_1.txt](exploit_ctarget_1.txt) for the solution to this problem.
 
 Here is the output after running ctarget with the exploit string:
 
@@ -102,3 +102,5 @@ PASS: Would have posted the following:
         result  1:PASS:0xffffffff:ctarget:1:00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C0 17 40 00 00 00 00 
 ```
+
+## Level 2
