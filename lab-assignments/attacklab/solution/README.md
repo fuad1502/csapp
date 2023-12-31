@@ -102,7 +102,7 @@ PASS: Would have posted the following:
  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 C0 17 40 00 00 00 00 
 ```
 
-## Level 2
+### Level 2
 
 The idea is to write a function inside the buffer, say at *%rsp + 0x08* and pass control to that function from *getbuf*. Inside that function, we write our cookie to *%rdi*, and then pass control again to the *touch2* function.
 
