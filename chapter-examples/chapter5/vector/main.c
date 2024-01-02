@@ -6,11 +6,11 @@
 
 #define MAX_N 1000000
 #define STEP_N 10000
-#define F_NUM 2
+#define F_NUM 3
 
 typedef void (*combine_f)(vec_ptr, data_t *);
-combine_f f[F_NUM] = {&combine1, &combine2};
-char *f_name[F_NUM] = {"combine1", "combine2"};
+combine_f f[F_NUM] = {&combine1, &combine2, &combine3};
+char *f_name[F_NUM] = {"combine1", "combine2", "combine3"};
 
 int main(int argc, char *argv[]) {
   if (argc != 2) {

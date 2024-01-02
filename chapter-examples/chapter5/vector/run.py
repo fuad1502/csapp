@@ -19,20 +19,21 @@ for optmization_level in optmization_levels:
             subprocess.run("make run OUTFILE={0}".format(outfile), shell=True)
             # Parse the output file
             x = []
-            y1 = []
-            y2 = []
+            y = []
+            N_f = 3;
+            for i in range(N_f):
+                y.append([]);
             with open("output/" + outfile, "r") as f:
                 reader = csv.reader(f)
                 next(reader)
                 for row in reader:
                     x.append(int(row[0]))
-                    y1.append(int(row[1]))   
-                    y2.append(int(row[2]))
+                    for i in range(N_f):
+                        y[i].append(int(row[i + 1]))   
             # Plot the data
-            plt.plot(x, y1)
-            legends.append("combine1_{0}_{1}_{2}".format(optmization_level, operation, data_type))
-            plt.plot(x, y2)
-            legends.append("combine2_{0}_{1}_{2}".format(optmization_level, operation, data_type))
+            for i in range(N_f):
+                plt.plot(x, y[i])
+                legends.append("combine{0}_{1}_{2}_{3}".format(i + 1, optmization_level, operation, data_type))
 
 plt.legend(legends)
 plt.show()
