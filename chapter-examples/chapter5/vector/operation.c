@@ -29,3 +29,13 @@ void combine3(vec_ptr v, data_t *dest) {
     *dest = *dest OP v->data[i];
   }
 }
+void combine4(vec_ptr v, data_t *dest) {
+  *dest = INDENT;
+  long i;
+  long length = vec_length(v);
+  data_t result = INDENT;
+  for (i = 0; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}

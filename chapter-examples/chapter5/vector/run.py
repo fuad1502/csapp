@@ -20,7 +20,7 @@ for optmization_level in optmization_levels:
             # Parse the output file
             x = []
             y = []
-            N_f = 3;
+            N_f = 4;
             for i in range(N_f):
                 y.append([]);
             with open("output/" + outfile, "r") as f:
