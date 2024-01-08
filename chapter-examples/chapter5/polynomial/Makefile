@@ -1,6 +1,7 @@
 OBJS := main.o
 OBJDIR := build
 OBJS := $(foreach obj,$(OBJS),$(OBJDIR)/$(obj))
+CFLAGS := -O1
 
 $(OBJDIR)/main: $(OBJS)
 	@echo $@
@@ -12,10 +13,10 @@ $(OBJS):$(OBJDIR)/%.o: %.c
 
 OUTDIR := output
 ifndef OUTFILE
-	OUTFILE := $(shell date +%Y%m%d%H%M%S).txt
+	OUTFILE := benchmark.txt
 endif
 
-run: main
+run: $(OBJDIR)/main
 	@./$(OBJDIR)/main $(OUTDIR)/$(OUTFILE)
 
 clean:
