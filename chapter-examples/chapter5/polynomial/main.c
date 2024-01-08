@@ -1,5 +1,7 @@
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <x86intrin.h>
 
 #define MAX_N 1000000
@@ -25,29 +27,31 @@ int main(int argc, char *argv[]) {
   fprintf(fp, "n, ");
   fprintf(fp, "%s, ", "Normal method");
   fprintf(fp, "%s, ", "Horner's method");
+  fprintf(fp, "%s", "Result Difference");
   fprintf(fp, "\n");
 
+  double a[MAX_N];
   for (int n = 0; n < MAX_N; n += STEP_N) {
     fprintf(fp, "%d, ", n);
 
-    double a[n];
     for (int i = 0; i < n; i++) {
       a[i] = (double)rand() / RAND_MAX;
     }
     double x = (double)rand() / RAND_MAX;
 
     uint64_t begin = rdtsc();
-    poly(a, x, n);
+    double res1 = poly(a, x, n - 1);
     uint64_t end = rdtsc();
     uint64_t duration = (end - begin);
     fprintf(fp, "%ld, ", duration);
 
     begin = rdtsc();
-    polyh(a, x, n);
+    double res2 = polyh(a, x, n - 1);
     end = rdtsc();
     duration = (end - begin);
     fprintf(fp, "%ld, ", duration);
 
+    fprintf(fp, "%lf", fabs(res1 - res2));
     fprintf(fp, "\n");
   }
   return 0;
