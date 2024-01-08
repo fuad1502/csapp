@@ -1,39 +1,84 @@
 import subprocess
 import csv
-import matplotlib.pyplot as plt
+import numpy as np
 
-optmization_levels = ["1"]
-operations = ["ADD"]
-data_types = ["long"]
+optmization_levels = ["1","2"]
+operations = ["ADD", "MUL"]
+data_types = ["long", "double"]
 
-legends = []
-for optmization_level in optmization_levels:
-    for operation in operations:
-        for data_type in data_types:
+# Run benchmark
+for opt in optmization_levels:
+    for dt in data_types:
+        for op in operations:
             # Clean build
             subprocess.run("make clean", shell=True)
             # Build the executable
-            subprocess.run("make OPTIMIZATION_LEVEL={0} OPSTR={1} DATA_T={2}".format(optmization_level, operation, data_type), shell=True)
+            subprocess.run(f"make OPTIMIZATION_LEVEL={opt} OPSTR={op} DATA_T={dt}", shell=True)
             # Run the executable
-            outfile = "benchmark_{0}_{1}_{2}.txt".format(optmization_level, operation, data_type)
-            subprocess.run("make run OUTFILE={0}".format(outfile), shell=True)
-            # Parse the output file
-            x = []
-            y = []
-            N_f = 4;
-            for i in range(N_f):
-                y.append([]);
-            with open("output/" + outfile, "r") as f:
-                reader = csv.reader(f)
-                next(reader)
-                for row in reader:
-                    x.append(int(row[0]))
-                    for i in range(N_f):
-                        y[i].append(int(row[i + 1]))   
-            # Plot the data
-            for i in range(N_f):
-                plt.plot(x, y[i])
-                legends.append("combine{0}_{1}_{2}_{3}".format(i + 1, optmization_level, operation, data_type))
+            outfile = f"benchmark_{opt}_{op}_{dt}.txt"
+            subprocess.run(f"make run OUTFILE={outfile}", shell=True)
 
-plt.legend(legends)
-plt.show()
+# Parse output
+function_names = [];
+result = {}
+for opt in optmization_levels:
+    for dt in data_types:
+        for op in operations:
+            outfile = f"benchmark_{opt}_{op}_{dt}.txt"
+            with open("output/" + outfile) as f:
+                csv_reader = csv.reader(f);
+                function_names = csv_reader.__next__()[1:-1].copy()
+                y = [[] for _ in function_names]
+                x = [];
+                for row in csv_reader:
+                    x.append(int(row[0]))
+                    for i, value in enumerate(row[1:-1]):
+                        y[i].append(int(value))
+                for i, f_name in enumerate(function_names):
+                    (m, c) = np.polyfit(x, y[i], 1)
+                    id = (opt, f_name, dt, op)
+                    result[id] = m
+
+# Print result table top border
+print("+{:^20}+{:^20}+".format("-" * 20, "-" * 20), end="")
+for dt in data_types:
+    format_string = "{:^" + str(11 * len(operations) - 1) + "}+"
+    print(format_string.format("-" * (11 * len(operations) - 1)), end="");
+print("")
+
+# Print result header
+# 1
+print("|{:20}|{:20}|".format("",""), end="")
+for dt in data_types:
+    format_string = "{:^" + str(11 * len(operations) - 1) + "}|"
+    print(format_string.format(dt), end="");
+print("")
+# 2
+print("|{:^20}|{:^20}|".format("Function", "Optimization"), end="")
+for dt in data_types:
+    for op in operations:
+        print("{:^10}|".format(op), end="")
+print("")
+# 3
+print("|{:^20}|{:^20}|".format("=" * 20, "=" * 20), end="")
+for dt in data_types:
+    for op in operations:
+        print("{:^10}|".format("=" * 10), end="")
+print("")
+
+# Print result
+for opt in optmization_levels:
+    for f_name in function_names:
+        print(f"|{f_name:^20}|{opt:^20}|", end="")
+        for dt in data_types:
+            for op in operations:
+                id = (opt, f_name, dt, op)
+                print(f"{result[id]:^10.3f}|", end="")
+        print("") 
+
+# Print result table bottom border
+print("+{:^20}+{:^20}+".format("-" * 20, "-" * 20), end="")
+for dt in data_types:
+    for op in operations:
+        print("{:^10}+".format("-" * 10), end="")
+print("")
