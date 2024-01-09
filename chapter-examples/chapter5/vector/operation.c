@@ -174,3 +174,71 @@ void combine6_10x10(vec_ptr v, data_t *dest) {
   }
   *dest = result;
 }
+
+void combine7_2x1a(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  data_t result = INDENT;
+  for (i = 0; i < length - 1; i += 2) {
+    data_t temp = v->data[i] OP v->data[i + 1];
+    result = result OP temp;
+  }
+  for (i = length - 1; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+
+void combine7_3x1a(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  data_t result = INDENT;
+  for (i = 0; i < length - 2; i += 3) {
+    data_t temp = v->data[i + 1] OP v->data[i + 2];
+    temp = temp OP v->data[i];
+    result = result OP temp;
+  }
+  for (i = length - 2; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+
+void combine7_5x1a(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  data_t result = INDENT;
+  for (i = 0; i < length - 4; i += 5) {
+    data_t temp = v->data[i + 3] OP v->data[i + 4];
+    temp = temp OP v->data[2];
+    temp = temp OP v->data[1];
+    temp = temp OP v->data[0];
+    result = result OP temp;
+  }
+  for (i = length - 4; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+
+void combine7_10x1a(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  data_t result = INDENT;
+  for (i = 0; i < length - 9; i += 10) {
+    data_t temp = v->data[i + 8] OP v->data[i + 9];
+    temp = temp OP v->data[7];
+    temp = temp OP v->data[6];
+    temp = temp OP v->data[5];
+    temp = temp OP v->data[4];
+    temp = temp OP v->data[3];
+    temp = temp OP v->data[2];
+    temp = temp OP v->data[1];
+    temp = temp OP v->data[0];
+    result = result OP temp;
+  }
+  for (i = length - 9; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
