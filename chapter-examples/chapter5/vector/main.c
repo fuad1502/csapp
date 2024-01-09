@@ -22,12 +22,6 @@ char *f_name[F_NUM] = {
     "combine6 (5 x 5)",  "combine6 (10 x 10)", "combine7 (2 x 1a)",
     "combine7 (3 x 1a)", "combine7 (5 x 1a)",  "combine7 (10 x 1a)"};
 
-uint64_t rdtsc() {
-  unsigned int lo, hi;
-  __asm__ __volatile__("rdtsc" : "=a"(lo), "=d"(hi));
-  return ((uint64_t)hi << 32) | lo;
-}
-
 int main(int argc, char *argv[]) {
   if (argc != 2) {
     printf("Usage: %s <output file>\n", argv[0]);
@@ -57,9 +51,9 @@ int main(int argc, char *argv[]) {
     // Benchmark all functions
     for (int i = 0; i < F_NUM; i++) {
       data_t data;
-      uint64_t begin = rdtsc();
+      uint64_t begin = __rdtsc();
       f[i](v, &data);
-      uint64_t end = rdtsc();
+      uint64_t end = __rdtsc();
       uint64_t duration = (end - begin);
 
       // Write duration to output file
