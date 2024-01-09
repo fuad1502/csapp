@@ -24,5 +24,8 @@ void combine1(vec_ptr v, data_t *dest);
 void combine2(vec_ptr v, data_t *dest);
 void combine3(vec_ptr v, data_t *dest);
 void combine4(vec_ptr v, data_t *dest);
+void combine5_2x1(vec_ptr v, data_t *dest);
+void combine5_3x1(vec_ptr v, data_t *dest);
+void combine5_5x1(vec_ptr v, data_t *dest);
 
 #endif // !OPERATION_H
