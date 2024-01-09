@@ -5,8 +5,9 @@
 #include <stdlib.h>
 #include <x86intrin.h>
 
-#define MAX_N 1000000
-#define STEP_N 10000
+#define START_N 0
+#define END_N 10000
+#define STEP_N 1
 #define F_NUM 16
 
 typedef void (*combine_f)(vec_ptr, data_t *);
@@ -39,14 +40,21 @@ int main(int argc, char *argv[]) {
   fprintf(fp, "\n");
 
   // Benchmark for different vector sizes
-  for (int n = 1; n < MAX_N; n += STEP_N) {
+  for (int n = START_N; n <= END_N; n += STEP_N) {
     // Write vector size to output file
     fprintf(fp, "%d, ", n);
 
     // Create vector
     vec_ptr v = new_vec(n);
+    if (v == NULL) {
+      printf("Vector NULL!\n");
+      exit(1);
+    }
     for (int i = 0; i < vec_length(v); i++) {
-      set_vec_element(v, i, rand());
+      if (set_vec_element(v, i, i + 1) == 0) {
+        printf("Set Vector NULL!\n");
+        exit(1);
+      }
     }
 
     // Benchmark all functions
@@ -57,12 +65,19 @@ int main(int argc, char *argv[]) {
       uint64_t end = __rdtsc();
       uint64_t duration = (end - begin);
 
+#if DATA_T == LONG
+      printf("Result = %ld\n", data);
+#elif DATA_T == DOUBLE
+      printf("Result = %lf\n", data);
+#endif
+
       // Write duration to output file
       fprintf(fp, "%ld, ", duration);
     }
 
     // Free vector
     fprintf(fp, "\n");
+    free(v->data);
     free(v);
   }
 
