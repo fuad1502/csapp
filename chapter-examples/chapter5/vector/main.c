@@ -7,14 +7,18 @@
 
 #define MAX_N 1000000
 #define STEP_N 10000
-#define F_NUM 7
+#define F_NUM 11
 
 typedef void (*combine_f)(vec_ptr, data_t *);
-combine_f f[F_NUM] = {&combine1,     &combine2,     &combine3,    &combine4,
-                      &combine5_2x1, &combine5_3x1, &combine5_5x1};
+combine_f f[F_NUM] = {&combine1,     &combine2,      &combine3,
+                      &combine4,     &combine5_2x1,  &combine5_3x1,
+                      &combine5_5x1, &combine6_2x2,  &combine6_3x3,
+                      &combine6_5x5, &combine6_10x10};
 char *f_name[F_NUM] = {
-    "combine1",         "combine2",         "combine3",        "combine4",
-    "combine5 (2 x 1)", "combine5 (3 x 1)", "combine5 (5 x 1)"};
+    "combine1",         "combine2",          "combine3",
+    "combine4",         "combine5 (2 x 1)",  "combine5 (3 x 1)",
+    "combine5 (5 x 1)", "combine6 (2 x 2)",  "combine6 (3 x 3)",
+    "combine6 (5 x 5)", "combine6 (10 x 10)"};
 
 uint64_t rdtsc() {
   unsigned int lo, hi;
