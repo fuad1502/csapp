@@ -2,7 +2,7 @@ OBJS := main.o vector.o operation.o
 OBJDIR := build
 OBJS := $(foreach obj,$(OBJS),$(OBJDIR)/$(obj))
 
-CFLAGS := -Wall
+CFLAGS := -Wall -march=native
 
 ifdef OPTIMIZATION_LEVEL
 CFLAGS += -O$(OPTIMIZATION_LEVEL)
@@ -22,7 +22,7 @@ $(OBJDIR)/main:$(OBJS)
 
 $(OBJS):$(OBJDIR)/%.o:%.c
 	@echo "$@"
-	@$(CC) -c $(CFLAGS) $< -o $@
+	$(CC) -c $(CFLAGS) $< -o $@
 
 clean:
 	@rm $(OBJDIR)/*.o $(OBJDIR)/main

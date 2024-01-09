@@ -4,7 +4,7 @@ import numpy as np
 
 optmization_levels = ["1","2"]
 operations = ["ADD", "MUL"]
-data_types = ["long", "double"]
+data_types = ["LONG", "DOUBLE"]
 
 # Run benchmark
 for opt in optmization_levels:

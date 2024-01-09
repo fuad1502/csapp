@@ -1,5 +1,6 @@
 #include "operation.h"
 #include "vector.h"
+#include <immintrin.h>
 
 void combine1(vec_ptr v, data_t *dest) {
   *dest = INDENT;
@@ -242,3 +243,145 @@ void combine7_10x1a(vec_ptr v, data_t *dest) {
   }
   *dest = result;
 }
+
+#if OPSTR == ADD
+#if DATA_T == LONG
+void combine8_4x4_vec(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  __m256i acc_vec1 = _mm256_set1_epi64x(INDENT);
+  __m256i acc_vec2 = _mm256_set1_epi64x(INDENT);
+  __m256i acc_vec3 = _mm256_set1_epi64x(INDENT);
+  __m256i acc_vec4 = _mm256_set1_epi64x(INDENT);
+  __m256i zeros = _mm256_set1_epi64x(0);
+  for (i = 0; i < length - 15; i += 16) {
+    __m256i data1 =
+        _mm256_maskload_epi64((const long long *)&v->data[i], zeros);
+    __m256i data2 =
+        _mm256_maskload_epi64((const long long *)&v->data[i + 4], zeros);
+    __m256i data3 =
+        _mm256_maskload_epi64((const long long *)&v->data[i + 8], zeros);
+    __m256i data4 =
+        _mm256_maskload_epi64((const long long *)&v->data[i + 12], zeros);
+    acc_vec1 = _mm256_add_epi64(acc_vec1, data1);
+    acc_vec2 = _mm256_add_epi64(acc_vec2, data2);
+    acc_vec3 = _mm256_add_epi64(acc_vec3, data3);
+    acc_vec4 = _mm256_add_epi64(acc_vec4, data4);
+  }
+  acc_vec1 = _mm256_add_epi64(acc_vec1, acc_vec2);
+  acc_vec1 = _mm256_add_epi64(acc_vec1, acc_vec3);
+  acc_vec1 = _mm256_add_epi64(acc_vec1, acc_vec4);
+  data_t acc1 = _mm256_extract_epi64(acc_vec1, 0);
+  data_t acc2 = _mm256_extract_epi64(acc_vec1, 1);
+  data_t acc3 = _mm256_extract_epi64(acc_vec1, 2);
+  data_t acc4 = _mm256_extract_epi64(acc_vec1, 3);
+  data_t result = acc1 OP acc2 OP acc3 OP acc4;
+  for (i = length - 15; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+#elif DATA_T == DOUBLE
+void combine8_4x4_vec(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  __m256d acc_vec1 = _mm256_set1_pd(INDENT);
+  __m256d acc_vec2 = _mm256_set1_pd(INDENT);
+  __m256d acc_vec3 = _mm256_set1_pd(INDENT);
+  __m256d acc_vec4 = _mm256_set1_pd(INDENT);
+  __m256i zeros = _mm256_set1_epi64x(0);
+  for (i = 0; i < length - 15; i += 16) {
+    __m256d data1 = _mm256_maskload_pd((const double *)&v->data[i], zeros);
+    __m256d data2 = _mm256_maskload_pd((const double *)&v->data[i + 4], zeros);
+    __m256d data3 = _mm256_maskload_pd((const double *)&v->data[i + 8], zeros);
+    __m256d data4 = _mm256_maskload_pd((const double *)&v->data[i + 12], zeros);
+    acc_vec1 = _mm256_add_pd(acc_vec1, data1);
+    acc_vec2 = _mm256_add_pd(acc_vec2, data2);
+    acc_vec3 = _mm256_add_pd(acc_vec3, data3);
+    acc_vec4 = _mm256_add_pd(acc_vec4, data4);
+  }
+  acc_vec1 = _mm256_add_pd(acc_vec1, acc_vec2);
+  acc_vec1 = _mm256_add_pd(acc_vec1, acc_vec3);
+  acc_vec1 = _mm256_add_pd(acc_vec1, acc_vec4);
+  data_t acc[4];
+  _mm256_store_pd((double *)acc, acc_vec1);
+  data_t result = acc[0] OP acc[1] OP acc[2] OP acc[3];
+  for (i = length - 15; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+#endif
+#elif OPSTR == MUL
+#if DATA_T == LONG
+void combine8_4x4_vec(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  data_t acc1 = INDENT;
+  data_t acc2 = INDENT;
+  data_t acc3 = INDENT;
+  data_t acc4 = INDENT;
+  for (i = 0; i < length - 3; i += 4) {
+    acc1 = acc1 OP v->data[i];
+    acc2 = acc2 OP v->data[i + 1];
+    acc3 = acc3 OP v->data[i + 2];
+    acc4 = acc4 OP v->data[i + 3];
+  }
+  data_t result = acc1 OP acc2 OP acc3 OP acc4;
+  for (i = length - 3; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+#elif DATA_T == DOUBLE
+void combine8_4x4_vec(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  __m256d acc_vec1 = _mm256_set1_pd(INDENT);
+  __m256d acc_vec2 = _mm256_set1_pd(INDENT);
+  __m256d acc_vec3 = _mm256_set1_pd(INDENT);
+  __m256d acc_vec4 = _mm256_set1_pd(INDENT);
+  __m256i zeros = _mm256_set1_epi64x(0);
+  for (i = 0; i < length - 15; i += 16) {
+    __m256d data1 = _mm256_maskload_pd((const double *)&v->data[i], zeros);
+    __m256d data2 = _mm256_maskload_pd((const double *)&v->data[i + 4], zeros);
+    __m256d data3 = _mm256_maskload_pd((const double *)&v->data[i + 8], zeros);
+    __m256d data4 = _mm256_maskload_pd((const double *)&v->data[i + 12], zeros);
+    acc_vec1 = _mm256_mul_pd(acc_vec1, data1);
+    acc_vec2 = _mm256_mul_pd(acc_vec2, data2);
+    acc_vec3 = _mm256_mul_pd(acc_vec3, data3);
+    acc_vec4 = _mm256_mul_pd(acc_vec4, data4);
+  }
+  acc_vec1 = _mm256_mul_pd(acc_vec1, acc_vec2);
+  acc_vec1 = _mm256_mul_pd(acc_vec1, acc_vec3);
+  acc_vec1 = _mm256_mul_pd(acc_vec1, acc_vec4);
+  data_t acc[4];
+  _mm256_store_pd((double *)acc, acc_vec1);
+  data_t result = acc[0] OP acc[1] OP acc[2] OP acc[3];
+  for (i = length - 15; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+#endif
+#else
+void combine8_4x4_vec(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  data_t acc1 = INDENT;
+  data_t acc2 = INDENT;
+  data_t acc3 = INDENT;
+  data_t acc4 = INDENT;
+  for (i = 0; i < length - 3; i += 4) {
+    acc1 = acc1 OP v->data[i];
+    acc2 = acc2 OP v->data[i + 1];
+    acc3 = acc3 OP v->data[i + 2];
+    acc4 = acc4 OP v->data[i + 3];
+  }
+  data_t result = acc1 OP acc2 OP acc3 OP acc4;
+  for (i = length - 3; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+#endif

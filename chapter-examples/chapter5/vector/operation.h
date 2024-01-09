@@ -35,5 +35,6 @@ void combine7_2x1a(vec_ptr v, data_t *dest);
 void combine7_3x1a(vec_ptr v, data_t *dest);
 void combine7_5x1a(vec_ptr v, data_t *dest);
 void combine7_10x1a(vec_ptr v, data_t *dest);
+void combine8_4x4_vec(vec_ptr v, data_t *dest);
 
 #endif // !OPERATION_H

@@ -1,11 +1,20 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
+#define LONG 0
+#define DOUBLE 1
+
 #ifndef DATA_T
-typedef long data_t;
-#else
-typedef DATA_T data_t;
+#define DATA_T LONG
 #endif // !DATA_T
+
+#if DATA_T == LONG
+typedef long data_t;
+#elif DATA_T == DOUBLE
+typedef double data_t;
+#else
+typedef long data_t;
+#endif
 
 typedef struct {
   long len;
