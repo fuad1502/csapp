@@ -5,10 +5,11 @@
 #include <stdlib.h>
 #include <x86intrin.h>
 
-#define START_N 0
-#define END_N 10000
-#define STEP_N 1
+#define START_N 32
+#define END_N 8192
+#define STEP_N 64
 #define F_NUM 17
+#define AVERAGING 256
 
 typedef void (*combine_f)(vec_ptr, data_t *);
 combine_f f[F_NUM] = {&combine1,         &combine2,        &combine3,
@@ -60,22 +61,17 @@ int main(int argc, char *argv[]) {
 
     // Benchmark all functions
     for (int i = 0; i < F_NUM; i++) {
-      data_t data;
-      uint64_t begin = __rdtsc();
-      f[i](v, &data);
-      uint64_t end = __rdtsc();
-      uint64_t duration = (end - begin);
-
-#if DATA_T == LONG
-      printf("Result = %ld\n", data);
-#elif DATA_T == DOUBLE
-      printf("Result = %lf\n", data);
-#elif DATA_T == INT
-      printf("Result = %d\n", data);
-#endif
-
-      // Write duration to output file
-      fprintf(fp, "%ld, ", duration);
+      uint64_t duration_average = 0;
+      for (int j = 0; j < AVERAGING; j++) {
+        data_t data;
+        uint64_t begin = __rdtsc();
+        f[i](v, &data);
+        uint64_t end = __rdtsc();
+        uint64_t duration = (end - begin);
+        duration_average = (duration_average * j + duration) / (j + 1);
+      }
+      // Write duration average to output file
+      fprintf(fp, "%ld, ", duration_average);
     }
 
     // Free vector
