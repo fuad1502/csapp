@@ -346,3 +346,81 @@ void combine8_4x4_vec(vec_ptr v, data_t *dest) {
   *dest = result;
 }
 #endif
+
+#if DATA_T == LONG && OPSTR == MUL
+void combine8_8x8_vec(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  data_t acc1 = INDENT;
+  data_t acc2 = INDENT;
+  data_t acc3 = INDENT;
+  data_t acc4 = INDENT;
+  data_t acc5 = INDENT;
+  data_t acc6 = INDENT;
+  data_t acc7 = INDENT;
+  data_t acc8 = INDENT;
+  for (i = 0; i < length - 7; i += 8) {
+    acc1 = acc1 OP v->data[i];
+    acc2 = acc2 OP v->data[i + 1];
+    acc3 = acc3 OP v->data[i + 2];
+    acc4 = acc4 OP v->data[i + 3];
+    acc5 = acc5 OP v->data[i + 4];
+    acc6 = acc6 OP v->data[i + 5];
+    acc7 = acc7 OP v->data[i + 6];
+    acc8 = acc8 OP v->data[i + 7];
+  }
+  data_t result = acc1 OP acc2 OP acc3 OP acc4 OP acc5 OP acc6 OP acc7 OP acc8;
+  for (; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+#else
+void combine8_8x8_vec(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  __m256x acc_vec1 = _mm256_set1_x(INDENT);
+  __m256x acc_vec2 = _mm256_set1_x(INDENT);
+  __m256x acc_vec3 = _mm256_set1_x(INDENT);
+  __m256x acc_vec4 = _mm256_set1_x(INDENT);
+  __m256x acc_vec5 = _mm256_set1_x(INDENT);
+  __m256x acc_vec6 = _mm256_set1_x(INDENT);
+  __m256x acc_vec7 = _mm256_set1_x(INDENT);
+  __m256x acc_vec8 = _mm256_set1_x(INDENT);
+  for (i = 0; i < length - (PACKING * 8 - 1); i += PACKING * 8) {
+    __m256x data1 = _mm256_loadu_x((mem_ptr_t *)&v->data[i]);
+    __m256x data2 = _mm256_loadu_x((mem_ptr_t *)&v->data[i + PACKING]);
+    __m256x data3 = _mm256_loadu_x((mem_ptr_t *)&v->data[i + PACKING * 2]);
+    __m256x data4 = _mm256_loadu_x((mem_ptr_t *)&v->data[i + PACKING * 3]);
+    __m256x data5 = _mm256_loadu_x((mem_ptr_t *)&v->data[i + PACKING * 4]);
+    __m256x data6 = _mm256_loadu_x((mem_ptr_t *)&v->data[i + PACKING * 5]);
+    __m256x data7 = _mm256_loadu_x((mem_ptr_t *)&v->data[i + PACKING * 6]);
+    __m256x data8 = _mm256_loadu_x((mem_ptr_t *)&v->data[i + PACKING * 7]);
+    acc_vec1 = _mm256_op_x(acc_vec1, data1);
+    acc_vec2 = _mm256_op_x(acc_vec2, data2);
+    acc_vec3 = _mm256_op_x(acc_vec3, data3);
+    acc_vec4 = _mm256_op_x(acc_vec4, data4);
+    acc_vec5 = _mm256_op_x(acc_vec5, data5);
+    acc_vec6 = _mm256_op_x(acc_vec6, data6);
+    acc_vec7 = _mm256_op_x(acc_vec7, data7);
+    acc_vec8 = _mm256_op_x(acc_vec8, data8);
+  }
+  acc_vec1 = _mm256_op_x(acc_vec1, acc_vec2);
+  acc_vec1 = _mm256_op_x(acc_vec1, acc_vec3);
+  acc_vec1 = _mm256_op_x(acc_vec1, acc_vec4);
+  acc_vec1 = _mm256_op_x(acc_vec1, acc_vec5);
+  acc_vec1 = _mm256_op_x(acc_vec1, acc_vec6);
+  acc_vec1 = _mm256_op_x(acc_vec1, acc_vec7);
+  acc_vec1 = _mm256_op_x(acc_vec1, acc_vec8);
+  data_t acc[PACKING];
+  _mm256_storeu_x((mem_ptr_t *)acc, acc_vec1);
+  data_t result = acc[0];
+  for (int j = 1; j < PACKING; j++) {
+    result = result OP acc[j];
+  }
+  for (; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+#endif
