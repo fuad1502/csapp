@@ -2,7 +2,7 @@ import subprocess
 import csv
 import numpy as np
 
-optmization_levels = ["1","2"]
+optmization_levels = ["1","2","fast"]
 operations = ["ADD", "MUL"]
 data_types = ["LONG", "DOUBLE", "INT"]
 
