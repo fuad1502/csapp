@@ -3,6 +3,7 @@
 
 #define LONG 0
 #define DOUBLE 1
+#define INT 2
 
 #ifndef DATA_T
 #define DATA_T LONG
@@ -12,6 +13,8 @@
 typedef long data_t;
 #elif DATA_T == DOUBLE
 typedef double data_t;
+#elif DATA_T == INT
+typedef int data_t;
 #else
 typedef long data_t;
 #endif

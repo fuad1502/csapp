@@ -69,6 +69,8 @@ int main(int argc, char *argv[]) {
       printf("Result = %ld\n", data);
 #elif DATA_T == DOUBLE
       printf("Result = %lf\n", data);
+#elif DATA_T == INT
+      printf("Result = %d\n", data);
 #endif
 
       // Write duration to output file

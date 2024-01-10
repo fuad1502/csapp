@@ -311,6 +311,41 @@ void combine8_4x4_vec(vec_ptr v, data_t *dest) {
   }
   *dest = result;
 }
+#elif DATA_T == INT
+void combine8_4x4_vec(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  __m256i acc_vec1 = _mm256_set1_epi32(INDENT);
+  __m256i acc_vec2 = _mm256_set1_epi32(INDENT);
+  __m256i acc_vec3 = _mm256_set1_epi32(INDENT);
+  __m256i acc_vec4 = _mm256_set1_epi32(INDENT);
+  for (i = 0; i < length - 31; i += 32) {
+    __m256i data1 = _mm256_loadu_si256((const __m256i *)&v->data[i]);
+    __m256i data2 = _mm256_loadu_si256((const __m256i *)&v->data[i + 8]);
+    __m256i data3 = _mm256_loadu_si256((const __m256i *)&v->data[i + 16]);
+    __m256i data4 = _mm256_loadu_si256((const __m256i *)&v->data[i + 24]);
+    acc_vec1 = _mm256_add_epi32(acc_vec1, data1);
+    acc_vec2 = _mm256_add_epi32(acc_vec2, data2);
+    acc_vec3 = _mm256_add_epi32(acc_vec3, data3);
+    acc_vec4 = _mm256_add_epi32(acc_vec4, data4);
+  }
+  acc_vec1 = _mm256_add_epi32(acc_vec1, acc_vec2);
+  acc_vec1 = _mm256_add_epi32(acc_vec1, acc_vec3);
+  acc_vec1 = _mm256_add_epi32(acc_vec1, acc_vec4);
+  data_t acc1 = _mm256_extract_epi32(acc_vec1, 0);
+  data_t acc2 = _mm256_extract_epi32(acc_vec1, 1);
+  data_t acc3 = _mm256_extract_epi32(acc_vec1, 2);
+  data_t acc4 = _mm256_extract_epi32(acc_vec1, 3);
+  data_t acc5 = _mm256_extract_epi32(acc_vec1, 4);
+  data_t acc6 = _mm256_extract_epi32(acc_vec1, 5);
+  data_t acc7 = _mm256_extract_epi32(acc_vec1, 6);
+  data_t acc8 = _mm256_extract_epi32(acc_vec1, 7);
+  data_t result = acc1 OP acc2 OP acc3 OP acc4 OP acc5 OP acc6 OP acc7 OP acc8;
+  for (; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
 #endif
 #elif OPSTR == MUL
 #if DATA_T == LONG
@@ -358,6 +393,42 @@ void combine8_4x4_vec(vec_ptr v, data_t *dest) {
   data_t acc[4];
   _mm256_store_pd((double *)acc, acc_vec1);
   data_t result = acc[0] OP acc[1] OP acc[2] OP acc[3];
+  for (; i < length; i++) {
+    result = result OP v->data[i];
+  }
+  *dest = result;
+}
+#elif DATA_T == INT
+void combine8_4x4_vec(vec_ptr v, data_t *dest) {
+  long length = vec_length(v);
+  long i;
+  __m256i acc_vec1 = _mm256_set1_epi32(INDENT);
+  __m256i acc_vec2 = _mm256_set1_epi32(INDENT);
+  __m256i acc_vec3 = _mm256_set1_epi32(INDENT);
+  __m256i acc_vec4 = _mm256_set1_epi32(INDENT);
+  __m256i zeros = _mm256_set1_epi32(0xFFFFFFFF);
+  for (i = 0; i < length - 31; i += 32) {
+    __m256i data1 = _mm256_loadu_si256((const __m256i *)&v->data[i]);
+    __m256i data2 = _mm256_loadu_si256((const __m256i *)&v->data[i + 8]);
+    __m256i data3 = _mm256_loadu_si256((const __m256i *)&v->data[i + 16]);
+    __m256i data4 = _mm256_loadu_si256((const __m256i *)&v->data[i + 24]);
+    acc_vec1 = _mm256_mullo_epi32(acc_vec1, data1);
+    acc_vec2 = _mm256_mullo_epi32(acc_vec2, data2);
+    acc_vec3 = _mm256_mullo_epi32(acc_vec3, data3);
+    acc_vec4 = _mm256_mullo_epi32(acc_vec4, data4);
+  }
+  acc_vec1 = _mm256_mullo_epi32(acc_vec1, acc_vec2);
+  acc_vec1 = _mm256_mullo_epi32(acc_vec1, acc_vec3);
+  acc_vec1 = _mm256_mullo_epi32(acc_vec1, acc_vec4);
+  data_t acc1 = _mm256_extract_epi32(acc_vec1, 0);
+  data_t acc2 = _mm256_extract_epi32(acc_vec1, 1);
+  data_t acc3 = _mm256_extract_epi32(acc_vec1, 2);
+  data_t acc4 = _mm256_extract_epi32(acc_vec1, 3);
+  data_t acc5 = _mm256_extract_epi32(acc_vec1, 4);
+  data_t acc6 = _mm256_extract_epi32(acc_vec1, 5);
+  data_t acc7 = _mm256_extract_epi32(acc_vec1, 6);
+  data_t acc8 = _mm256_extract_epi32(acc_vec1, 7);
+  data_t result = acc1 OP acc2 OP acc3 OP acc4 OP acc5 OP acc6 OP acc7 OP acc8;
   for (; i < length; i++) {
     result = result OP v->data[i];
   }
