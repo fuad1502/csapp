@@ -1,9 +1,9 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#define LONG 0
-#define DOUBLE 1
-#define INT 2
+#define LONG 1
+#define DOUBLE 2
+#define INT 3
 
 #ifndef DATA_T
 #define DATA_T LONG
