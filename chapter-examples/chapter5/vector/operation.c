@@ -253,16 +253,11 @@ void combine8_4x4_vec(vec_ptr v, data_t *dest) {
   __m256i acc_vec2 = _mm256_set1_epi64x(INDENT);
   __m256i acc_vec3 = _mm256_set1_epi64x(INDENT);
   __m256i acc_vec4 = _mm256_set1_epi64x(INDENT);
-  __m256i zeros = _mm256_set1_epi64x(0xFFFFFFFFFFFFFFFF);
   for (i = 0; i < length - 15; i += 16) {
-    __m256i data1 =
-        _mm256_maskload_epi64((const long long *)&v->data[i], zeros);
-    __m256i data2 =
-        _mm256_maskload_epi64((const long long *)&v->data[i + 4], zeros);
-    __m256i data3 =
-        _mm256_maskload_epi64((const long long *)&v->data[i + 8], zeros);
-    __m256i data4 =
-        _mm256_maskload_epi64((const long long *)&v->data[i + 12], zeros);
+    __m256i data1 = _mm256_loadu_si256((const __m256i *)&v->data[i]);
+    __m256i data2 = _mm256_loadu_si256((const __m256i *)&v->data[i + 4]);
+    __m256i data3 = _mm256_loadu_si256((const __m256i *)&v->data[i + 8]);
+    __m256i data4 = _mm256_loadu_si256((const __m256i *)&v->data[i + 12]);
     acc_vec1 = _mm256_add_epi64(acc_vec1, data1);
     acc_vec2 = _mm256_add_epi64(acc_vec2, data2);
     acc_vec3 = _mm256_add_epi64(acc_vec3, data3);
@@ -289,12 +284,11 @@ void combine8_4x4_vec(vec_ptr v, data_t *dest) {
   __m256d acc_vec2 = _mm256_set1_pd(INDENT);
   __m256d acc_vec3 = _mm256_set1_pd(INDENT);
   __m256d acc_vec4 = _mm256_set1_pd(INDENT);
-  __m256i zeros = _mm256_set1_epi64x(0xFFFFFFFFFFFFFFFF);
   for (i = 0; i < length - 15; i += 16) {
-    __m256d data1 = _mm256_maskload_pd((const double *)&v->data[i], zeros);
-    __m256d data2 = _mm256_maskload_pd((const double *)&v->data[i + 4], zeros);
-    __m256d data3 = _mm256_maskload_pd((const double *)&v->data[i + 8], zeros);
-    __m256d data4 = _mm256_maskload_pd((const double *)&v->data[i + 12], zeros);
+    __m256d data1 = _mm256_loadu_pd((const double *)&v->data[i]);
+    __m256d data2 = _mm256_loadu_pd((const double *)&v->data[i + 4]);
+    __m256d data3 = _mm256_loadu_pd((const double *)&v->data[i + 8]);
+    __m256d data4 = _mm256_loadu_pd((const double *)&v->data[i + 12]);
     acc_vec1 = _mm256_add_pd(acc_vec1, data1);
     acc_vec2 = _mm256_add_pd(acc_vec2, data2);
     acc_vec3 = _mm256_add_pd(acc_vec3, data3);
@@ -376,12 +370,11 @@ void combine8_4x4_vec(vec_ptr v, data_t *dest) {
   __m256d acc_vec2 = _mm256_set1_pd(INDENT);
   __m256d acc_vec3 = _mm256_set1_pd(INDENT);
   __m256d acc_vec4 = _mm256_set1_pd(INDENT);
-  __m256i zeros = _mm256_set1_epi64x(0xFFFFFFFFFFFFFFFF);
   for (i = 0; i < length - 15; i += 16) {
-    __m256d data1 = _mm256_maskload_pd((const double *)&v->data[i], zeros);
-    __m256d data2 = _mm256_maskload_pd((const double *)&v->data[i + 4], zeros);
-    __m256d data3 = _mm256_maskload_pd((const double *)&v->data[i + 8], zeros);
-    __m256d data4 = _mm256_maskload_pd((const double *)&v->data[i + 12], zeros);
+    __m256d data1 = _mm256_loadu_pd((const double *)&v->data[i]);
+    __m256d data2 = _mm256_loadu_pd((const double *)&v->data[i + 4]);
+    __m256d data3 = _mm256_loadu_pd((const double *)&v->data[i + 8]);
+    __m256d data4 = _mm256_loadu_pd((const double *)&v->data[i + 12]);
     acc_vec1 = _mm256_mul_pd(acc_vec1, data1);
     acc_vec2 = _mm256_mul_pd(acc_vec2, data2);
     acc_vec3 = _mm256_mul_pd(acc_vec3, data3);
@@ -390,7 +383,7 @@ void combine8_4x4_vec(vec_ptr v, data_t *dest) {
   acc_vec1 = _mm256_mul_pd(acc_vec1, acc_vec2);
   acc_vec1 = _mm256_mul_pd(acc_vec1, acc_vec3);
   acc_vec1 = _mm256_mul_pd(acc_vec1, acc_vec4);
-  data_t acc[4];
+  data_t acc[4] __attribute__((aligned(32)));
   _mm256_store_pd((double *)acc, acc_vec1);
   data_t result = acc[0] OP acc[1] OP acc[2] OP acc[3];
   for (; i < length; i++) {
