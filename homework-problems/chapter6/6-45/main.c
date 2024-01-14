@@ -7,13 +7,15 @@
 #define START_N 100
 #define END_N 1000
 #define STEP_N 10
-#define F_NUM 2
+#define F_NUM 3
 #define WARM_UP 10
 #define AVERAGING 10
 
 typedef void (*matrix_multiplication_f)(int *, int *, int);
-matrix_multiplication_f f[F_NUM] = {&transpose_naive, &transpose_optimized};
-char *f_name[F_NUM] = {"transpose_naive", "transpose_optimized"};
+matrix_multiplication_f f[F_NUM] = {&transpose_naive, &transpose_optimized,
+                                    &transpose_optimized2};
+char *f_name[F_NUM] = {"transpose_naive", "transpose_optimized",
+                       "transpose_optimized2"};
 int check_result(int *result1, int *result2, int dim);
 void print_result(int *result1, int *result2, int dim);
 int dst[F_NUM][END_N * END_N];

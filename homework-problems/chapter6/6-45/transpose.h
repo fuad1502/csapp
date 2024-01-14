@@ -3,5 +3,6 @@
 
 void transpose_naive(int *dst, int *src, int dim);
 void transpose_optimized(int *dst, int *src, int dim);
+void transpose_optimized2(int *dst, int *src, int dim);
 
 #endif // TRANSPOSE_H
