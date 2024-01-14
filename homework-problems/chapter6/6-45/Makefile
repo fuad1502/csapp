@@ -13,12 +13,13 @@ $(OBJS):$(OBJDIR)/%.o:%.c
 	@$(CC) $(CFLAGS) -c $< -o $@
 
 ifndef OUTFILE
-  OUTFILE := out.txt
+  OUTFILE := output/out.txt
 endif
 
 .PHONY: run
 run: $(OBJDIR)/main
 	@echo "> Running $<"
+	@mkdir -p $(dir $(OUTFILE))
 	@./$< $(OUTFILE)
 
 .PHONY: plot
