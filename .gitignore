@@ -4,3 +4,6 @@
 examples/
 build/
 output/
+.csim_results
+*.tar
+*.o
