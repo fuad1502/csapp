@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Create cache
-  unsigned long S = (2 << s);
+  unsigned long S = (1 << s);
   cache_set_t *cache_sets = calloc(S, sizeof(cache_set_t));
   for (int i = 0; i < S; i++) {
     cache_sets[i].cache_lines = calloc(E, sizeof(cache_line_t));
@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
   cache_t cache;
   cache.cache_sets = cache_sets;
   cache.s = s;
+  cache.E = E;
   cache.b = b;
 
   // Parse trace file
@@ -66,6 +67,10 @@ int main(int argc, char *argv[]) {
   int hits = 0, misses = 0, evictions = 0;
   for (int i = 0; i < n_trace_lines; i++) {
     simulate_cache(&cache, trace_lines[i], &hits, &misses, &evictions);
+    // Perform cache simulation twice for 'Modify' operation
+    if (trace_lines[i].op == M) {
+      simulate_cache(&cache, trace_lines[i], &hits, &misses, &evictions);
+    }
   }
 
   // Print summary
@@ -120,5 +125,53 @@ int parse_trace_file(FILE *trace_file, trace_line_t trace_lines[]) {
   return i;
 }
 
-void simulate_cache(cache_t *cache, trace_line_t trace_line, int *n_hits,
-                    int *n_miss, int *n_evicted) {}
+void simulate_cache(cache_t *cache, trace_line_t trace_line, int *hits,
+                    int *misses, int *evictions) {
+  // Decode set index and tag value from address
+  unsigned long curr_set_idx =
+      (trace_line.addr >> cache->b) & ((1 << cache->s) - 1);
+  unsigned long curr_tag = (trace_line.addr >> (cache->b + cache->s));
+  cache_set_t *curr_set = &cache->cache_sets[curr_set_idx];
+
+  // Check if cache entry exist and update cache line age
+  int hit = 0;
+  for (int i = 0; i < cache->E; i++) {
+    if (curr_set->cache_lines[i].valid &&
+        curr_set->cache_lines[i].tag == curr_tag) {
+      curr_set->cache_lines[i].age = 0;
+      *hits += 1;
+      hit = 1;
+    } else if (curr_set->cache_lines[i].valid) {
+      curr_set->cache_lines[i].age += 1;
+    }
+  }
+
+  // Return if hit
+  if (hit) {
+    return;
+  }
+  // Miss
+  *misses += 1;
+
+  // Find LRU cache line or empty cache line
+  int max_age = -1;
+  int evict_line_idx = -1;
+  for (int i = 0; i < cache->E; i++) {
+    if (curr_set->cache_lines[i].valid == 0) {
+      // Found empty cache line
+      curr_set->cache_lines[i].tag = curr_tag;
+      curr_set->cache_lines[i].valid = 1;
+      curr_set->cache_lines[i].age = 0;
+      return;
+    } else if (curr_set->cache_lines[i].age > max_age) {
+      max_age = curr_set->cache_lines[i].age;
+      evict_line_idx = i;
+    }
+  }
+
+  // Evict and update cache line
+  printf("Evict line %d\n", evict_line_idx);
+  *evictions += 1;
+  curr_set->cache_lines[evict_line_idx].tag = curr_tag;
+  curr_set->cache_lines[evict_line_idx].age = 0;
+}

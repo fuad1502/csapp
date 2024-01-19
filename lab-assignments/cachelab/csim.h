@@ -5,6 +5,7 @@
 
 typedef struct {
   int valid;
+  int age;
   int tag;
 } cache_line_t;
 
@@ -14,8 +15,9 @@ typedef struct {
 
 typedef struct {
   cache_set_t *cache_sets;
-  int b;
   int s;
+  int E;
+  int b;
 } cache_t;
 
 typedef enum { L, S, M } op_t;
