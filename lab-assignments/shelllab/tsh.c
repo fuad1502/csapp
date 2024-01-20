@@ -161,7 +161,15 @@ int main(int argc, char **argv) {
  * background children don't receive SIGINT (SIGTSTP) from the kernel
  * when we type ctrl-c (ctrl-z) at the keyboard.
  */
-void eval(char *cmdline) { return; }
+void eval(char *cmdline) {
+  char *argv[MAXARGS];
+  int bg = parseline(cmdline, argv);
+  // Perform builtin command
+  if (builtin_cmd(argv)) {
+    return;
+  }
+  return;
+}
 
 /*
  * parseline - Parse the command line and build the argv array.
@@ -221,7 +229,12 @@ int parseline(const char *cmdline, char **argv) {
  * builtin_cmd - If the user has typed a built-in command then execute
  *    it immediately.
  */
-int builtin_cmd(char **argv) { return 0; /* not a builtin command */ }
+int builtin_cmd(char **argv) {
+  if (strcmp(argv[0], "quit") == 0) {
+    exit(0);
+  }
+  return 0; /* not a builtin command */
+}
 
 /*
  * do_bgfg - Execute the builtin bg and fg commands
