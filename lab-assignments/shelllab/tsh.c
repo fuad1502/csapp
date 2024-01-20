@@ -83,6 +83,7 @@ void unix_error(char *msg);
 void app_error(char *msg);
 typedef void handler_t(int);
 handler_t *Signal(int signum, handler_t *handler);
+pid_t Fork();
 
 /*
  * main - The shell's main routine
@@ -163,11 +164,42 @@ int main(int argc, char **argv) {
  */
 void eval(char *cmdline) {
   char *argv[MAXARGS];
+
+  // Parse line
   int bg = parseline(cmdline, argv);
+
   // Perform builtin command
   if (builtin_cmd(argv)) {
     return;
   }
+
+  // Execute command
+  pid_t pid;
+  if ((pid = Fork()) == 0) {
+    // Child process
+    // Set group id to pid
+    setpgid(0, 0);
+    if (execve(argv[0], argv, environ) == -1) {
+      // Execve return -1 on error
+      exit(0);
+    }
+  }
+
+  // Handle foreground job
+  if (!bg) {
+    // Add job to jobs
+    addjob(jobs, pid, FG, cmdline);
+    // Wait for foreground job to complete
+    waitfg(pid);
+    // Remove foreground job from jobs
+    deletejob(jobs, pid);
+  }
+  // Handle background job
+  else {
+  }
+
+  // Wait for foreground job to complete
+
   return;
 }
 
@@ -244,7 +276,12 @@ void do_bgfg(char **argv) { return; }
 /*
  * waitfg - Block until process pid is no longer the foreground process
  */
-void waitfg(pid_t pid) { return; }
+void waitfg(pid_t pid) {
+  if (waitpid(pid, NULL, 0) == -1) {
+    unix_error("waitpid error");
+  }
+  return;
+}
 
 /*****************
  * Signal handlers
@@ -469,6 +506,17 @@ handler_t *Signal(int signum, handler_t *handler) {
   if (sigaction(signum, &action, &old_action) < 0)
     unix_error("Signal error");
   return (old_action.sa_handler);
+}
+
+/*
+ * Fork - wrapper for the fork function
+ */
+pid_t Fork() {
+  pid_t pid;
+  if ((pid = fork()) == -1) {
+    unix_error("Fork error");
+  }
+  return pid;
 }
 
 /*
