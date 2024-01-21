@@ -398,7 +398,7 @@ void do_bg(int job_idx) {
   // block all signals
   sigset_t prev_set = sigblock_all();
 
-  kill(jobs[job_idx].pid, SIGCONT);
+  killpg(jobs[job_idx].pid, SIGCONT);
   jobs[job_idx].state = BG;
   fprintf(stdout, "[%d] (%d) %s", jobs[job_idx].jid, jobs[job_idx].pid,
           jobs[job_idx].cmdline);
@@ -411,7 +411,7 @@ void do_fg(int job_idx) {
   // block all signals
   sigset_t prev_set = sigblock_all();
 
-  kill(jobs[job_idx].pid, SIGCONT);
+  killpg(jobs[job_idx].pid, SIGCONT);
   jobs[job_idx].state = FG;
   fg_pid = jobs[job_idx].pid;
 
@@ -419,7 +419,7 @@ void do_fg(int job_idx) {
   sigsetmask_set(prev_set);
 
   // wait foreground process
-  waitfg(jobs[job_idx].pid);
+  waitfg(fg_pid);
 }
 
 /*
@@ -439,7 +439,7 @@ void waitfg(pid_t pid) {
     // Change stopped foreground job state to ST
     struct job_t *job = getjobpid(jobs, pid);
     job->state = ST;
-    printf("Job [%d] (%d) stopped by signal %d\n", job->jid, job->pid, SIGSTOP);
+    printf("Job [%d] (%d) stopped by signal %d\n", job->jid, job->pid, SIGTSTP);
   } else if (WIFEXITED(status)) {
     // Remove foreground job from jobs
     deletejob(jobs, pid);
@@ -448,6 +448,8 @@ void waitfg(pid_t pid) {
       struct job_t *job = getjobpid(jobs, pid);
       printf("Job [%d] (%d) terminated by signal %d\n", job->jid, job->pid,
              SIGINT);
+      // Remove foreground job from jobs
+      deletejob(jobs, pid);
     } else {
       unix_error("Unexpected error");
     }
@@ -518,7 +520,7 @@ void sigint_handler(int sig) {
  */
 void sigtstp_handler(int sig) {
   if (fg_pid != 0)
-    killpg(fg_pid, SIGSTOP);
+    killpg(fg_pid, SIGTSTP);
 }
 
 /*********************
