@@ -299,6 +299,8 @@ int builtin_cmd(char **argv) {
         fprintf(stdout, "[%d] (%d) Running %s", jobs[i].jid, jobs[i].pid,
                 jobs[i].cmdline);
       } else if (jobs[i].state == ST) {
+        fprintf(stdout, "[%d] (%d) Stopped %s", jobs[i].jid, jobs[i].pid,
+                jobs[i].cmdline);
       }
     }
     return 1;
@@ -404,7 +406,10 @@ void sigint_handler(int sig) {
  *     the user types ctrl-z at the keyboard. Catch it and suspend the
  *     foreground job by sending it a SIGTSTP.
  */
-void sigtstp_handler(int sig) { return; }
+void sigtstp_handler(int sig) {
+  if (fg_pid != 0)
+    killpg(fg_pid, SIGSTOP);
+}
 
 /*********************
  * End signal handlers
