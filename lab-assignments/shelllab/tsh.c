@@ -304,6 +304,74 @@ int builtin_cmd(char **argv) {
       }
     }
     return 1;
+  } else if (strcmp(argv[0], "bg") == 0) {
+    // No argument to bg
+    if (argv[1] == NULL) {
+      fprintf(stdout, "bg command requires PID or %%jobid argument\n");
+    }
+    // %jobid as argument
+    else if (argv[1][0] == '%') {
+      int jobid = atoi(&argv[1][1]);
+      int job_idx = -1;
+
+      // block all signals
+      sigset_t prev_set = sigblock_all();
+
+      // find job in jobs
+      for (int i = 0; i < MAXJOBS; i++) {
+        if (jobs[i].jid == jobid) {
+          job_idx = i;
+        }
+      }
+
+      if (job_idx != -1) {
+        kill(jobs[job_idx].pid, SIGCONT);
+        jobs[job_idx].state = BG;
+        fprintf(stdout, "[%d] (%d) %s", jobs[job_idx].jid, jobs[job_idx].pid,
+                jobs[job_idx].cmdline);
+      }
+      // job not found in jobs
+      else {
+        fprintf(stdout, "%s: No such job\n", argv[1]);
+      }
+
+      // restore all signals
+      sigsetmask_set(prev_set);
+    }
+    // pid as argument
+    else if (argv[1][0] >= '0' && argv[1][0] <= '9') {
+      int pid = atoi(&argv[1][0]);
+      int job_idx = -1;
+
+      // block all signals
+      sigset_t prev_set = sigblock_all();
+
+      // find pid in jobs
+      for (int i = 0; i < MAXJOBS; i++) {
+        if (jobs[i].pid == pid) {
+          job_idx = i;
+        }
+      }
+
+      if (job_idx != -1) {
+        kill(jobs[job_idx].pid, SIGCONT);
+        jobs[job_idx].state = BG;
+        fprintf(stdout, "[%d] (%d) %s", jobs[job_idx].jid, jobs[job_idx].pid,
+                jobs[job_idx].cmdline);
+      }
+      // pid not found in jobs
+      else {
+        fprintf(stdout, "(%d): No such process\n", pid);
+      }
+
+      // restore all signals
+      sigsetmask_set(prev_set);
+    }
+    // argument is neither %jobid nor pid
+    else {
+      fprintf(stdout, "bg: argument must be a PID or %%jobid\n");
+    }
+    return 1;
   }
   return 0; /* not a builtin command */
 }
