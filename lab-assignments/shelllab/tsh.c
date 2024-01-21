@@ -60,6 +60,8 @@ void eval(char *cmdline);
 int builtin_cmd(char **argv);
 void do_bgfg(char **argv);
 void waitfg(pid_t pid);
+void do_bg(int job_idx);
+void do_fg(int job_idx);
 
 void sigchld_handler(int sig);
 void sigtstp_handler(int sig);
@@ -304,73 +306,8 @@ int builtin_cmd(char **argv) {
       }
     }
     return 1;
-  } else if (strcmp(argv[0], "bg") == 0) {
-    // No argument to bg
-    if (argv[1] == NULL) {
-      fprintf(stdout, "bg command requires PID or %%jobid argument\n");
-    }
-    // %jobid as argument
-    else if (argv[1][0] == '%') {
-      int jobid = atoi(&argv[1][1]);
-      int job_idx = -1;
-
-      // block all signals
-      sigset_t prev_set = sigblock_all();
-
-      // find job in jobs
-      for (int i = 0; i < MAXJOBS; i++) {
-        if (jobs[i].jid == jobid) {
-          job_idx = i;
-        }
-      }
-
-      if (job_idx != -1) {
-        kill(jobs[job_idx].pid, SIGCONT);
-        jobs[job_idx].state = BG;
-        fprintf(stdout, "[%d] (%d) %s", jobs[job_idx].jid, jobs[job_idx].pid,
-                jobs[job_idx].cmdline);
-      }
-      // job not found in jobs
-      else {
-        fprintf(stdout, "%s: No such job\n", argv[1]);
-      }
-
-      // restore all signals
-      sigsetmask_set(prev_set);
-    }
-    // pid as argument
-    else if (argv[1][0] >= '0' && argv[1][0] <= '9') {
-      int pid = atoi(&argv[1][0]);
-      int job_idx = -1;
-
-      // block all signals
-      sigset_t prev_set = sigblock_all();
-
-      // find pid in jobs
-      for (int i = 0; i < MAXJOBS; i++) {
-        if (jobs[i].pid == pid) {
-          job_idx = i;
-        }
-      }
-
-      if (job_idx != -1) {
-        kill(jobs[job_idx].pid, SIGCONT);
-        jobs[job_idx].state = BG;
-        fprintf(stdout, "[%d] (%d) %s", jobs[job_idx].jid, jobs[job_idx].pid,
-                jobs[job_idx].cmdline);
-      }
-      // pid not found in jobs
-      else {
-        fprintf(stdout, "(%d): No such process\n", pid);
-      }
-
-      // restore all signals
-      sigsetmask_set(prev_set);
-    }
-    // argument is neither %jobid nor pid
-    else {
-      fprintf(stdout, "bg: argument must be a PID or %%jobid\n");
-    }
+  } else if (strcmp(argv[0], "bg") == 0 || strcmp(argv[0], "fg") == 0) {
+    do_bgfg(argv);
     return 1;
   }
   return 0; /* not a builtin command */
@@ -379,7 +316,111 @@ int builtin_cmd(char **argv) {
 /*
  * do_bgfg - Execute the builtin bg and fg commands
  */
-void do_bgfg(char **argv) { return; }
+void do_bgfg(char **argv) {
+  int bg = 0;
+  if (strcmp(argv[0], "bg") == 0) {
+    bg = 1;
+  }
+
+  // No argument to bg
+  if (argv[1] == NULL) {
+    fprintf(stdout, "bg command requires PID or %%jobid argument\n");
+  }
+  // %jobid as argument
+  else if (argv[1][0] == '%') {
+    int jobid = atoi(&argv[1][1]);
+    int job_idx = -1;
+
+    // block all signals
+    sigset_t prev_set = sigblock_all();
+
+    // find job in jobs
+    for (int i = 0; i < MAXJOBS; i++) {
+      if (jobs[i].jid == jobid) {
+        job_idx = i;
+      }
+    }
+
+    // restore all signals
+    sigsetmask_set(prev_set);
+
+    // run job in bg or fg
+    if (job_idx != -1) {
+      if (bg) {
+        do_bg(job_idx);
+      } else {
+        do_fg(job_idx);
+      }
+    }
+    // job not found in jobs
+    else {
+      fprintf(stdout, "%s: No such job\n", argv[1]);
+    }
+  }
+  // pid as argument
+  else if (argv[1][0] >= '0' && argv[1][0] <= '9') {
+    int pid = atoi(&argv[1][0]);
+    int job_idx = -1;
+
+    // block all signals
+    sigset_t prev_set = sigblock_all();
+
+    // find pid in jobs
+    for (int i = 0; i < MAXJOBS; i++) {
+      if (jobs[i].pid == pid) {
+        job_idx = i;
+      }
+    }
+
+    // restore all signals
+    sigsetmask_set(prev_set);
+
+    // run job in bg or fg
+    if (job_idx != -1) {
+      if (bg) {
+        do_bg(job_idx);
+      } else {
+        do_fg(job_idx);
+      }
+    }
+    // pid not found in jobs
+    else {
+      fprintf(stdout, "(%d): No such process\n", pid);
+    }
+  }
+  // argument is neither %jobid nor pid
+  else {
+    fprintf(stdout, "bg: argument must be a PID or %%jobid\n");
+  }
+}
+
+void do_bg(int job_idx) {
+  // block all signals
+  sigset_t prev_set = sigblock_all();
+
+  kill(jobs[job_idx].pid, SIGCONT);
+  jobs[job_idx].state = BG;
+  fprintf(stdout, "[%d] (%d) %s", jobs[job_idx].jid, jobs[job_idx].pid,
+          jobs[job_idx].cmdline);
+
+  // restore all signals
+  sigsetmask_set(prev_set);
+}
+
+void do_fg(int job_idx) {
+  // block all signals
+  sigset_t prev_set = sigblock_all();
+
+  kill(jobs[job_idx].pid, SIGCONT);
+  jobs[job_idx].state = FG;
+  fg_pid = jobs[job_idx].pid;
+
+  // restore all signals
+  sigsetmask_set(prev_set);
+
+  // wait foreground process
+  waitfg(jobs[job_idx].pid);
+}
 
 /*
  * waitfg - Block until process pid is no longer the foreground process
@@ -398,6 +439,7 @@ void waitfg(pid_t pid) {
     // Change stopped foreground job state to ST
     struct job_t *job = getjobpid(jobs, pid);
     job->state = ST;
+    printf("Job [%d] (%d) stopped by signal %d\n", job->jid, job->pid, SIGSTOP);
   } else if (WIFEXITED(status)) {
     // Remove foreground job from jobs
     deletejob(jobs, pid);
