@@ -50,6 +50,7 @@ struct job_t {           /* The job struct */
   char cmdline[MAXLINE]; /* command line */
 };
 struct job_t jobs[MAXJOBS]; /* The job list */
+sig_atomic_t fg_pid = 0;
 /* End global variables */
 
 /* Function prototypes */
@@ -85,6 +86,8 @@ void app_error(char *msg);
 typedef void handler_t(int);
 handler_t *Signal(int signum, handler_t *handler);
 pid_t Fork();
+sigset_t sigblock_all();
+sigset_t sigsetmask_set(sigset_t set);
 
 /*
  * main - The shell's main routine
@@ -207,6 +210,7 @@ void eval(char *cmdline) {
   // Add job to jobs
   if (!bg) {
     addjob(jobs, pid, FG, cmdline);
+    fg_pid = pid;
   } else {
     addjob(jobs, pid, BG, cmdline);
     struct job_t *job = getjobpid(jobs, pid);
@@ -220,8 +224,6 @@ void eval(char *cmdline) {
   if (!bg) {
     // Wait for foreground job to complete
     waitfg(pid);
-    // Remove foreground job from jobs
-    deletejob(jobs, pid);
   }
   // Handle background job
   else {
@@ -313,9 +315,40 @@ void do_bgfg(char **argv) { return; }
  * waitfg - Block until process pid is no longer the foreground process
  */
 void waitfg(pid_t pid) {
-  if (waitpid(pid, NULL, 0) == -1) {
+  int status;
+  if (waitpid(pid, &status, WUNTRACED) == -1) {
     unix_error("waitpid error");
   }
+
+  // Block all signals
+  sigset_t prev_set = sigblock_all();
+
+  // Update jobs
+  if (WIFSTOPPED(status)) {
+    // Change stopped foreground job state to ST
+    struct job_t *job = getjobpid(jobs, pid);
+    job->state = ST;
+  } else if (WIFEXITED(status)) {
+    // Remove foreground job from jobs
+    deletejob(jobs, pid);
+  } else if (WIFSIGNALED(status)) {
+    if (WTERMSIG(status) == SIGINT) {
+      struct job_t *job = getjobpid(jobs, pid);
+      printf("Job [%d] (%d) terminated by signal %d\n", job->jid, job->pid,
+             SIGINT);
+    } else {
+      unix_error("Unexpected error");
+    }
+  } else {
+    unix_error("Unexpected error");
+  }
+
+  // Update fg_pid
+  fg_pid = 0;
+
+  // Restore signals
+  sigsetmask_set(prev_set);
+
   return;
 }
 
@@ -335,9 +368,7 @@ void sigchld_handler(int sig) {
   int prev_errno = errno;
 
   // Block all signals
-  sigset_t fill_set, prev_set;
-  sigfillset(&fill_set);
-  sigprocmask(SIG_BLOCK, &fill_set, &prev_set);
+  sigset_t prev_set = sigblock_all();
 
   // Try to reap all terminated background jobs
   for (int i = 0; i < MAXJOBS; i++) {
@@ -352,7 +383,7 @@ void sigchld_handler(int sig) {
   }
 
   // Restore signals
-  sigprocmask(SIG_SETMASK, &prev_set, NULL);
+  sigsetmask_set(prev_set);
 
   // Restore errno
   errno = prev_errno;
@@ -363,7 +394,10 @@ void sigchld_handler(int sig) {
  *    user types ctrl-c at the keyboard.  Catch it and send it along
  *    to the foreground job.
  */
-void sigint_handler(int sig) { return; }
+void sigint_handler(int sig) {
+  if (fg_pid != 0)
+    killpg(fg_pid, SIGINT);
+}
 
 /*
  * sigtstp_handler - The kernel sends a SIGTSTP to the shell whenever
@@ -579,6 +613,19 @@ pid_t Fork() {
     unix_error("Fork error");
   }
   return pid;
+}
+
+sigset_t sigblock_all() {
+  sigset_t fill_set, prev_set;
+  sigfillset(&fill_set);
+  sigprocmask(SIG_BLOCK, &fill_set, &prev_set);
+  return prev_set;
+}
+
+sigset_t sigsetmask_set(sigset_t set) {
+  sigset_t prev_set;
+  sigprocmask(SIG_SETMASK, &set, &prev_set);
+  return prev_set;
 }
 
 /*
