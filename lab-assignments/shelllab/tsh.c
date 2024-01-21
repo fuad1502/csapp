@@ -3,6 +3,7 @@
  *
  * <Put your name and login ID here>
  */
+#include <bits/types/sigset_t.h>
 #include <ctype.h>
 #include <errno.h>
 #include <signal.h>
@@ -168,27 +169,55 @@ void eval(char *cmdline) {
   // Parse line
   int bg = parseline(cmdline, argv);
 
+  // Ignore empty command
+  if (argv[0] == NULL) {
+    return;
+  }
+
   // Perform builtin command
   if (builtin_cmd(argv)) {
     return;
   }
 
-  // Execute command
+  // Block SIGCHLD signal until job is added to jobs
+  sigset_t sigchild_set, prev_set;
+  sigemptyset(&sigchild_set);
+  sigaddset(&sigchild_set, SIGCHLD);
+  sigprocmask(SIG_BLOCK, &sigchild_set, &prev_set);
+
+  // Try to execute command in a seperate process
   pid_t pid;
   if ((pid = Fork()) == 0) {
-    // Child process
+    /* Child process */
+    // Unblock SIGCHLD signal
+    sigprocmask(SIG_SETMASK, &prev_set, NULL);
+
     // Set group id to pid
     setpgid(0, 0);
+
+    // Try to execute command
     if (execve(argv[0], argv, environ) == -1) {
       // Execve return -1 on error
+      printf("%s: command not found\n", argv[0]);
       exit(0);
     }
+    // Execve does not return on success
   }
+
+  // Add job to jobs
+  if (!bg) {
+    addjob(jobs, pid, FG, cmdline);
+  } else {
+    addjob(jobs, pid, BG, cmdline);
+    struct job_t *job = getjobpid(jobs, pid);
+    printf("[%d] (%d) %s", job->jid, job->pid, cmdline);
+  }
+
+  // Unblock SIGCHLD signal
+  sigprocmask(SIG_SETMASK, &prev_set, NULL);
 
   // Handle foreground job
   if (!bg) {
-    // Add job to jobs
-    addjob(jobs, pid, FG, cmdline);
     // Wait for foreground job to complete
     waitfg(pid);
     // Remove foreground job from jobs
@@ -197,8 +226,6 @@ void eval(char *cmdline) {
   // Handle background job
   else {
   }
-
-  // Wait for foreground job to complete
 
   return;
 }
@@ -294,7 +321,33 @@ void waitfg(pid_t pid) {
  *     available zombie children, but doesn't wait for any other
  *     currently running children to terminate.
  */
-void sigchld_handler(int sig) { return; }
+void sigchld_handler(int sig) {
+  // Store errno
+  int prev_errno = errno;
+
+  // Block all signals
+  sigset_t fill_set, prev_set;
+  sigfillset(&fill_set);
+  sigprocmask(SIG_BLOCK, &fill_set, &prev_set);
+
+  // Try to reap all terminated background jobs
+  for (int i = 0; i < MAXJOBS; i++) {
+    if (jobs[i].state == BG) {
+      pid_t pid;
+      if ((pid = waitpid(jobs[i].pid, NULL, WNOHANG)) < 0) {
+        unix_error("waitpid error");
+      } else if (pid > 0) {
+        deletejob(jobs, pid);
+      }
+    }
+  }
+
+  // Restore signals
+  sigprocmask(SIG_SETMASK, &prev_set, NULL);
+
+  // Restore errno
+  errno = prev_errno;
+}
 
 /*
  * sigint_handler - The kernel sends a SIGINT to the shell whenver the
