@@ -324,7 +324,10 @@ void do_bgfg(char **argv) {
 
   // No argument to bg
   if (argv[1] == NULL) {
-    fprintf(stdout, "bg command requires PID or %%jobid argument\n");
+    if (bg)
+      fprintf(stdout, "bg command requires PID or %%jobid argument\n");
+    else
+      fprintf(stdout, "fg command requires PID or %%jobid argument\n");
   }
   // %jobid as argument
   else if (argv[1][0] == '%') {
@@ -390,7 +393,10 @@ void do_bgfg(char **argv) {
   }
   // argument is neither %jobid nor pid
   else {
-    fprintf(stdout, "bg: argument must be a PID or %%jobid\n");
+    if (bg)
+      fprintf(stdout, "bg: argument must be a PID or %%jobid\n");
+    else
+      fprintf(stdout, "fg: argument must be a PID or %%jobid\n");
   }
 }
 
